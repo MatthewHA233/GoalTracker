@@ -1,0 +1,40 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+}
+
+.timer {
+  font-size: 48px;
+  transition: color 0.5s;
+}
+
+.task-list table {
+  width: 100%;
+}
+
+.task-list th, .task-list td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.green-text {
+  color: #28a745;
+}
+
+.red-text {
+  color: #dc3545;
+}
+
+.timer-description {
+  color: gray;
+  font-size: 0.85em; /* 稍小于标题 */
+  margin-top: 5px;
+}
+
+@media (max-width: 576px) {
+  .controls .btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}

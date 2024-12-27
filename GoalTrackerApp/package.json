@@ -1,0 +1,15 @@
+{
+    "name": "goal-tracker-app",
+    "version": "1.0.0",
+    "description": "目标追踪器桌面应用程序",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron ."
+    },
+    "author": "陈浩",
+    "license": "MIT",
+    "devDependencies": {
+        "electron": "^25.3.0"
+    },
+    "keywords": []
+}
