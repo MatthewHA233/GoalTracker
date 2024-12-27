@@ -8,30 +8,38 @@
   <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
   <!-- 引入自定义样式 -->
   <link href="styles.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
   <div class="container my-5">
-    <h1 class="text-center mb-4">目标追踪器</h1>
+    <h1 class="text-center mb-5" style="color: var(--primary-color); font-weight: 600;">
+      目标追踪器
+      <div class="small text-muted" style="font-size: 1rem; margin-top: 0.5rem;">
+        追踪你的学习进度
+      </div>
+    </h1>
 
     <!-- 设置目标 -->
     <div class="card mb-4">
       <div class="card-body">
         <h5 class="card-title">设置目标</h5>
-        <form id="goal-form" class="form-inline justify-content-center">
-          <div class="form-group mb-2 mx-sm-2">
-            <label for="total-tasks" class="sr-only">总任务数</label>
-            <input type="number" class="form-control" id="total-tasks" placeholder="总任务数" min="1" required>
+        <form id="goal-form" class="row g-3 justify-content-center align-items-end">
+          <div class="col-md-3">
+            <label class="form-label">总任务数</label>
+            <input type="number" class="form-control" id="total-tasks" min="1" required>
           </div>
-          <div class="form-group mb-2 mx-sm-2">
-            <label for="measure-word" class="sr-only">量词</label>
-            <input type="text" class="form-control" id="measure-word" placeholder="量词（如篇）" value="篇" required>
+          <div class="col-md-2">
+            <label class="form-label">量词</label>
+            <input type="text" class="form-control" id="measure-word" value="篇" required>
           </div>
-          <div class="form-group mb-2 mx-sm-2">
-            <label for="total-time" class="sr-only">总时间（分钟）</label>
-            <input type="number" class="form-control" id="total-time" placeholder="总时间（分钟）" min="1" required>
+          <div class="col-md-3">
+            <label class="form-label">总时间（分钟）</label>
+            <input type="number" class="form-control" id="total-time" min="1" required>
           </div>
-          <button type="submit" class="btn btn-primary mb-2">开始</button>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">开始追踪</button>
+          </div>
         </form>
       </div>
     </div>
