@@ -84,7 +84,7 @@ function App() {
       <div className="max-w-[2000px] mx-auto">
         <div className="max-w-3xl mx-auto mb-8">
           <h1 className="text-3xl font-bold text-center mb-8 text-purple-500">
-            目标追踪器
+          小目标追踪器
             <div className="text-sm text-purple-300/60 mt-2">追踪你的工作、学习进度</div>
           </h1>
 
