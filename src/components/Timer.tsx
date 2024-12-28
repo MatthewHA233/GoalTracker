@@ -52,8 +52,6 @@ export function Timer({
 
     if (isRunning) {
       animationFrameId = requestAnimationFrame(updateTimer);
-    } else {
-      lastUpdateRef.current = null;
     }
 
     return () => {
@@ -62,6 +60,13 @@ export function Timer({
       }
     };
   }, [isRunning]);
+
+  // 只在记录任务时重置毫秒
+  React.useEffect(() => {
+    if (taskElapsedTime === 0) {
+      setMilliseconds(0);
+    }
+  }, [taskElapsedTime]);
 
   return (
     <>

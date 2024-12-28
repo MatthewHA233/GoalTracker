@@ -7,10 +7,9 @@ interface TimeDisplayProps {
 }
 
 export function TimeDisplay({ seconds, milliseconds }: TimeDisplayProps) {
-  const timeString = formatTime(seconds);
   return (
     <>
-      {timeString}
+      {formatTime(seconds)}
       <span className="ms-display">.{String(milliseconds).padStart(2, '0')}</span>
     </>
   );
