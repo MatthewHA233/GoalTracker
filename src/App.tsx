@@ -27,6 +27,7 @@ function App() {
   const [showTracker, setShowTracker] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [currentRecordId, setCurrentRecordId] = useState<string | null>(null);
+  const [shouldResetTimer, setShouldResetTimer] = useState(false);
 
   useEffect(() => {
     initialize();
@@ -83,6 +84,7 @@ function App() {
     setShowTracker(false);
     setCurrentTaskId(null);
     setCurrentRecordId(null);
+    setShouldResetTimer(false);
   };
 
   const recordTask = async () => {
@@ -94,12 +96,18 @@ function App() {
     }
 
     const newTaskCount = taskCount + 1;
+    const currentTaskTime = taskElapsedTime;
+    const currentTotalTime = totalElapsedTime;
+
+    // 先更新状态
     setTaskCount(newTaskCount);
+    setShouldResetTimer(true);
+    setTaskElapsedTime(0);
     
     const newSnapshot: TaskSnapshot = {
       taskNumber: newTaskCount,
-      taskTime: taskElapsedTime,
-      totalTime: totalElapsedTime
+      taskTime: currentTaskTime,
+      totalTime: currentTotalTime
     };
     setTaskSnapshots(prev => [newSnapshot, ...prev]);
 
@@ -113,8 +121,6 @@ function App() {
     } catch (error) {
       console.error('Error recording snapshot:', error);
     }
-    
-    setTaskElapsedTime(0);
 
     if (newTaskCount >= totalTasks) {
       await showTaskCompletionNotification(totalTasks, measureWord, true);
@@ -168,6 +174,8 @@ function App() {
               onPause={pauseTimer}
               onReset={resetTimer}
               onRecordTask={recordTask}
+              shouldResetTimer={shouldResetTimer}
+              onTimerReset={() => setShouldResetTimer(false)}
             />
           )}
         </div>

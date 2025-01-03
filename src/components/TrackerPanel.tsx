@@ -11,10 +11,12 @@ interface TrackerPanelProps {
   isRunning: boolean;
   isOverTime: boolean;
   isTaskOverTime: boolean;
+  shouldResetTimer: boolean;
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
   onRecordTask: () => void;
+  onTimerReset: () => void;
 }
 
 export function TrackerPanel({
@@ -26,10 +28,12 @@ export function TrackerPanel({
   isRunning,
   isOverTime,
   isTaskOverTime,
+  shouldResetTimer,
   onStart,
   onPause,
   onReset,
-  onRecordTask
+  onRecordTask,
+  onTimerReset
 }: TrackerPanelProps) {
   return (
     <div className="bg-[#151515] rounded-xl shadow-2xl p-6 border border-purple-900/20">
@@ -41,6 +45,8 @@ export function TrackerPanel({
         isRunning={isRunning}
         isOverTime={isOverTime}
         isTaskOverTime={isTaskOverTime}
+        shouldResetTimer={shouldResetTimer}
+        onTimerReset={onTimerReset}
         onStart={onStart}
         onPause={onPause}
         onReset={onReset}

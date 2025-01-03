@@ -4,7 +4,9 @@ import { useAuthStore } from '../stores/authStore';
 export function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const { signIn, signUp } = useAuthStore();
 
@@ -14,7 +16,11 @@ export function AuthForm() {
     
     try {
       if (isSignUp) {
-        await signUp(email, password);
+        if (password !== confirmPassword) {
+          setError('两次输入的密码不一致');
+          return;
+        }
+        await signUp(email, password, username);
       } else {
         await signIn(email, password);
       }
@@ -50,6 +56,21 @@ export function AuthForm() {
                 required
               />
             </div>
+
+            {isSignUp && (
+              <div>
+                <label className="block text-sm font-medium text-purple-300 mb-1">
+                  用户名
+                </label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#1a1a1a] border border-purple-900/30 rounded-lg text-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  required
+                />
+              </div>
+            )}
             
             <div>
               <label className="block text-sm font-medium text-purple-300 mb-1">
@@ -63,6 +84,21 @@ export function AuthForm() {
                 required
               />
             </div>
+
+            {isSignUp && (
+              <div>
+                <label className="block text-sm font-medium text-purple-300 mb-1">
+                  确认密码
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#1a1a1a] border border-purple-900/30 rounded-lg text-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  required
+                />
+              </div>
+            )}
           </div>
 
           <button
@@ -74,7 +110,14 @@ export function AuthForm() {
 
           <button
             type="button"
-            onClick={() => setIsSignUp(!isSignUp)}
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setError('');
+              setEmail('');
+              setPassword('');
+              setConfirmPassword('');
+              setUsername('');
+            }}
             className="w-full mt-4 px-4 py-2 rounded-lg text-purple-300/60 hover:text-purple-300 transition-colors"
           >
             {isSignUp ? '已有账号？点击登录' : '没有账号？点击注册'}

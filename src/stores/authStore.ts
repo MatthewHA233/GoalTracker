@@ -5,7 +5,7 @@ import type { User } from '@supabase/supabase-js';
 interface AuthState {
   user: User | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, username?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   initialize: () => Promise<void>;
@@ -16,10 +16,13 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: true,
-  signUp: async (email: string, password: string) => {
+  signUp: async (email: string, password: string, username?: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: { username }
+      }
     });
     if (error) throw error;
   },

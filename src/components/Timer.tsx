@@ -11,9 +11,11 @@ interface TimerProps {
   isRunning: boolean;
   isOverTime: boolean;
   isTaskOverTime: boolean;
+  shouldResetTimer: boolean;
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
+  onTimerReset: () => void;
 }
 
 export function Timer({
@@ -24,49 +26,72 @@ export function Timer({
   isRunning,
   isOverTime,
   isTaskOverTime,
+  shouldResetTimer,
   onStart,
   onPause,
-  onReset
+  onReset,
+  onTimerReset
 }: TimerProps) {
-  const [milliseconds, setMilliseconds] = React.useState(0);
-  const lastUpdateRef = React.useRef<number | null>(null);
+  const [taskMilliseconds, setTaskMilliseconds] = React.useState(0);
+  const [totalMilliseconds, setTotalMilliseconds] = React.useState(0);
+  const startTimeRef = React.useRef<number | null>(null);
+  const animationFrameRef = React.useRef<number>();
+  const offsetRef = React.useRef(0);
 
   React.useEffect(() => {
-    let animationFrameId: number;
-    
     const updateTimer = (timestamp: number) => {
-      if (!lastUpdateRef.current) {
-        lastUpdateRef.current = timestamp;
+      if (!startTimeRef.current) {
+        startTimeRef.current = timestamp;
+        offsetRef.current = 0;
       }
+
+      const elapsed = timestamp - startTimeRef.current;
+      const adjustedElapsed = elapsed + offsetRef.current;
       
-      const elapsed = timestamp - lastUpdateRef.current;
-      if (elapsed >= 10) { // 每10ms更新一次
-        setMilliseconds(prev => (prev + 1) % 100);
-        lastUpdateRef.current = timestamp;
-      }
+      // 提前15ms开始更新毫秒，使显示更流畅
+      const msOffset = 15;
       
-      if (isRunning) {
-        animationFrameId = requestAnimationFrame(updateTimer);
+      // 更新总时间的毫秒
+      const totalMs = (adjustedElapsed % 1000) + msOffset;
+      setTotalMilliseconds(Math.floor(totalMs / 10) % 100);
+      
+      // 更新当前任务的毫秒
+      const taskMs = ((adjustedElapsed + taskElapsedTime * 1000) % 1000) + msOffset;
+      setTaskMilliseconds(Math.floor(taskMs / 10) % 100);
+
+      // 如果接近下一秒，增加偏移量以保持同步
+      if (elapsed >= 1000) {
+        startTimeRef.current = timestamp;
+        offsetRef.current = adjustedElapsed % 1000;
       }
+
+      animationFrameRef.current = requestAnimationFrame(updateTimer);
     };
 
     if (isRunning) {
-      animationFrameId = requestAnimationFrame(updateTimer);
+      startTimeRef.current = null;
+      animationFrameRef.current = requestAnimationFrame(updateTimer);
+    } else {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      startTimeRef.current = null;
     }
 
     return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isRunning]);
+  }, [isRunning, taskElapsedTime]);
 
-  // 只在记录任务时重置毫秒
+  // 只重置当前任务的毫秒计数
   React.useEffect(() => {
-    if (taskElapsedTime === 0) {
-      setMilliseconds(0);
+    if (shouldResetTimer) {
+      setTaskMilliseconds(0);
+      onTimerReset();
     }
-  }, [taskElapsedTime]);
+  }, [shouldResetTimer, onTimerReset]);
 
   return (
     <>
@@ -98,7 +123,10 @@ export function Timer({
         <button
           onClick={() => {
             onReset();
-            setMilliseconds(0);
+            setTaskMilliseconds(0);
+            setTotalMilliseconds(0);
+            startTimeRef.current = null;
+            offsetRef.current = 0;
           }}
           className="flex items-center px-4 py-2 rounded-lg text-sm sm:text-base bg-red-600 hover:bg-red-500 text-white transition-all duration-300 shadow-lg hover:shadow-red-500/20"
         >
@@ -112,7 +140,7 @@ export function Timer({
           <h3 className="text-sm sm:text-lg font-medium mb-2 sm:mb-4 text-purple-300">当前任务</h3>
           <div className="digital-display transform-none sm:transform">
             <div className={`time-value ${isTaskOverTime ? 'text-red-400' : 'text-purple-400'}`}>
-              <TimeDisplay seconds={taskElapsedTime} milliseconds={milliseconds} />
+              <TimeDisplay seconds={taskElapsedTime} milliseconds={taskMilliseconds} />
             </div>
           </div>
           <div className="text-xs sm:text-sm text-purple-300/60 mt-2 sm:mt-4">
@@ -123,7 +151,7 @@ export function Timer({
           <h3 className="text-sm sm:text-lg font-medium mb-2 sm:mb-4 text-purple-300">总时间</h3>
           <div className="digital-display transform-none sm:transform">
             <div className={`time-value ${isOverTime ? 'text-red-400' : 'text-purple-400'}`}>
-              <TimeDisplay seconds={totalElapsedTime} milliseconds={milliseconds} />
+              <TimeDisplay seconds={totalElapsedTime} milliseconds={totalMilliseconds} />
             </div>
           </div>
           <div className="text-xs sm:text-sm text-purple-300/60 mt-2 sm:mt-4">
