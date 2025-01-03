@@ -1,12 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle } from 'lucide-react';
 import { GoalForm } from './components/GoalForm';
 import { Timer } from './components/Timer';
 import { TaskList } from './components/TaskList';
+import { AuthForm } from './components/AuthForm';
+import { UserButton } from './components/UserButton';
 import { showTaskCompletionNotification } from './utils/notifications';
 import { TaskSnapshot } from './types/task';
+import { useAuthStore } from './stores/authStore';
+import { useTaskStore } from './stores/taskStore';
+import { Header } from './components/Header';
+import { TrackerPanel } from './components/TrackerPanel';
 
 function App() {
+  const { user, loading: authLoading, initialize } = useAuthStore();
+  const { createTask, createTaskRecord, recordTaskSnapshot } = useTaskStore();
+  
   const [totalTasks, setTotalTasks] = useState(1);
   const [measureWord, setMeasureWord] = useState('个');
   const [totalTime, setTotalTime] = useState(60);
@@ -16,6 +25,12 @@ function App() {
   const [taskCount, setTaskCount] = useState(0);
   const [taskSnapshots, setTaskSnapshots] = useState<TaskSnapshot[]>([]);
   const [showTracker, setShowTracker] = useState(false);
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+  const [currentRecordId, setCurrentRecordId] = useState<string | null>(null);
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   useEffect(() => {
     let interval: number | null = null;
@@ -30,13 +45,30 @@ function App() {
     };
   }, [isRunning]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, taskName: string) => {
     e.preventDefault();
     if (totalTasks <= 0 || totalTime <= 0) {
       alert('请输入有效的任务数和时间。');
       return;
     }
-    setShowTracker(true);
+
+    try {
+      const task = await createTask(taskName);
+      setCurrentTaskId(task.id);
+
+      const record = await createTaskRecord(
+        task.id,
+        totalTasks,
+        measureWord,
+        totalTime
+      );
+      setCurrentRecordId(record.id);
+
+      setShowTracker(true);
+    } catch (error) {
+      console.error('Error starting task:', error);
+      alert('启动任务时发生错误');
+    }
   };
 
   const startTimer = () => setIsRunning(true);
@@ -49,9 +81,13 @@ function App() {
     setTaskCount(0);
     setTaskSnapshots([]);
     setShowTracker(false);
+    setCurrentTaskId(null);
+    setCurrentRecordId(null);
   };
 
   const recordTask = async () => {
+    if (!currentRecordId) return;
+    
     if (taskCount >= totalTasks) {
       await showTaskCompletionNotification(totalTasks, measureWord, false);
       return;
@@ -66,6 +102,17 @@ function App() {
       totalTime: totalElapsedTime
     };
     setTaskSnapshots(prev => [newSnapshot, ...prev]);
+
+    try {
+      await recordTaskSnapshot(
+        currentRecordId,
+        newSnapshot.taskNumber,
+        newSnapshot.taskTime,
+        newSnapshot.totalTime
+      );
+    } catch (error) {
+      console.error('Error recording snapshot:', error);
+    }
     
     setTaskElapsedTime(0);
 
@@ -75,6 +122,18 @@ function App() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-purple-300">加载中...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthForm />;
+  }
+
   const averageTimePerTask = totalTime * 60 / totalTasks;
   const isOverTime = totalElapsedTime > averageTimePerTask * (taskCount + 1);
   const isTaskOverTime = taskElapsedTime > averageTimePerTask;
@@ -83,10 +142,7 @@ function App() {
     <div className="min-h-screen bg-[#0a0a0a] p-4 md:p-8">
       <div className="max-w-[2000px] mx-auto">
         <div className="max-w-3xl mx-auto mb-8">
-          <h1 className="text-3xl font-bold text-center mb-8 text-purple-500">
-          小目标追踪器
-            <div className="text-sm text-purple-300/60 mt-2">追踪你的工作、学习进度</div>
-          </h1>
+          <Header isTimerRunning={isRunning} onTimerPause={pauseTimer} />
 
           {!showTracker ? (
             <GoalForm
@@ -99,35 +155,20 @@ function App() {
               onSubmit={handleSubmit}
             />
           ) : (
-            <div className="bg-[#151515] rounded-xl shadow-2xl p-6 border border-purple-900/20">
-              <Timer
-                totalElapsedTime={totalElapsedTime}
-                taskElapsedTime={taskElapsedTime}
-                averageTimePerTask={averageTimePerTask}
-                taskCount={taskCount}
-                isRunning={isRunning}
-                isOverTime={isOverTime}
-                isTaskOverTime={isTaskOverTime}
-                onStart={startTimer}
-                onPause={pauseTimer}
-                onReset={resetTimer}
-              />
-
-              <div className="text-center mb-8">
-                <button
-                  onClick={recordTask}
-                  disabled={!isRunning || taskCount >= totalTasks}
-                  className={`flex items-center px-6 py-3 rounded-lg mx-auto ${
-                    !isRunning || taskCount >= totalTasks
-                      ? 'bg-purple-900/30 text-purple-300/50'
-                      : 'bg-purple-600 hover:bg-purple-500 text-white'
-                  } transition-all duration-300 shadow-lg hover:shadow-purple-500/20`}
-                >
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  记录目标 ({taskCount}/{totalTasks})
-                </button>
-              </div>
-            </div>
+            <TrackerPanel
+              totalElapsedTime={totalElapsedTime}
+              taskElapsedTime={taskElapsedTime}
+              averageTimePerTask={averageTimePerTask}
+              taskCount={taskCount}
+              totalTasks={totalTasks}
+              isRunning={isRunning}
+              isOverTime={isOverTime}
+              isTaskOverTime={isTaskOverTime}
+              onStart={startTimer}
+              onPause={pauseTimer}
+              onReset={resetTimer}
+              onRecordTask={recordTask}
+            />
           )}
         </div>
 

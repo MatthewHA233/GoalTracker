@@ -24,10 +24,12 @@ export function NumberInput({
 }: NumberInputProps) {
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [tempLabel, setTempLabel] = useState(label || '');
+  const [inputValue, setInputValue] = useState(value.toString());
 
   const handleChange = (newValue: number) => {
     const clampedValue = Math.min(max, Math.max(min, newValue));
     onChange(clampedValue);
+    setInputValue(clampedValue.toString());
   };
 
   const increment = (amount: number = step) => {
@@ -36,6 +38,31 @@ export function NumberInput({
 
   const decrement = (amount: number = step) => {
     handleChange(value - amount);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputValue(val);
+    
+    if (val === '') return;
+    
+    const numVal = parseInt(val);
+    if (!isNaN(numVal)) {
+      onChange(numVal);
+    }
+  };
+
+  const handleInputBlur = () => {
+    if (inputValue === '') {
+      handleChange(min);
+    } else {
+      const numVal = parseInt(inputValue);
+      if (!isNaN(numVal)) {
+        handleChange(numVal);
+      } else {
+        setInputValue(value.toString());
+      }
+    }
   };
 
   const handleLabelClick = () => {
@@ -82,11 +109,9 @@ export function NumberInput({
       <div className="relative flex-1">
         <input
           type="text"
-          value={value}
-          onChange={(e) => {
-            const val = parseInt(e.target.value);
-            if (!isNaN(val)) handleChange(val);
-          }}
+          value={inputValue}
+          onChange={handleInputChange}
+          onBlur={handleInputBlur}
           className="w-full px-3 py-2 bg-[#1a1a1a] border border-purple-900/30 rounded-lg text-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all appearance-none"
         />
         {label && (
