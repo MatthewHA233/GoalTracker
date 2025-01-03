@@ -148,7 +148,11 @@ function App() {
     <div className="min-h-screen bg-[#0a0a0a] p-4 md:p-8">
       <div className="max-w-[2000px] mx-auto">
         <div className="max-w-3xl mx-auto mb-8">
-          <Header isTimerRunning={isRunning} onTimerPause={pauseTimer} />
+          <Header 
+            isTimerRunning={isRunning} 
+            onTimerPause={pauseTimer}
+            showTitle={!showTracker}
+          />
 
           {!showTracker ? (
             <GoalForm

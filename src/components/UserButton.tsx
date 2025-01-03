@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { UserProfile } from './UserProfile';
+import { ClipboardList } from 'lucide-react';
 
 interface UserButtonProps {
   isTimerRunning: boolean;
@@ -24,9 +25,15 @@ export function UserButton({ isTimerRunning, onTimerPause }: UserButtonProps) {
     <>
       <button
         onClick={handleProfileClick}
-        className="px-4 py-2 rounded-lg text-purple-300/60 hover:text-purple-300 transition-colors"
+        className="group relative px-4 py-2 rounded-lg text-purple-300/60 hover:text-purple-300 transition-colors"
       >
-        {user.user_metadata.username || user.email}
+        <div className="flex items-center gap-2">
+          <ClipboardList className="w-4 h-4" />
+          <span>{user.user_metadata.username || user.email}</span>
+        </div>
+        <div className="absolute -top-8 right-0 bg-[#1a1a1a] px-2 py-1 rounded text-xs text-purple-300/60 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+          历史任务记录
+        </div>
       </button>
 
       {showProfile && (

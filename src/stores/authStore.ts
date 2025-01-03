@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import type { User } from '@supabase/supabase-js';
+import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthState {
   user: User | null;
+  session: Session | null;
   loading: boolean;
   signUp: (email: string, password: string, username?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -15,6 +16,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  session: null,
   loading: true,
   signUp: async (email: string, password: string, username?: string) => {
     const { error } = await supabase.auth.signUp({
@@ -36,14 +38,30 @@ export const useAuthStore = create<AuthState>((set) => ({
   signOut: async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    set({ user: null });
+    set({ user: null, session: null });
   },
   initialize: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    set({ user, loading: false });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        set({ user: session.user, session });
+      } else {
+        set({ user: null, session: null });
+      }
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+      set({ user: null, session: null });
+    } finally {
+      set({ loading: false });
+    }
 
+    // Listen for auth changes
     supabase.auth.onAuthStateChange((_event, session) => {
-      set({ user: session?.user ?? null });
+      set({ 
+        user: session?.user ?? null,
+        session: session
+      });
     });
   },
   updateProfile: async ({ username }) => {
@@ -52,13 +70,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
     if (error) throw error;
     
-    const { data: { user } } = await supabase.auth.getUser();
-    set({ user });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      set({ user: session.user, session });
+    }
   },
   updatePassword: async (currentPassword: string, newPassword: string) => {
-    // 先验证当前密码
+    // First verify current password
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.email) throw new Error('未登录');
+
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: useAuthStore.getState().user?.email || '',
+      email: session.user.email,
       password: currentPassword
     });
     if (signInError) throw new Error('当前密码错误');

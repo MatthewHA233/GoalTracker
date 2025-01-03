@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { TypewriterText } from './TypewriterText';
 
 export function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -32,6 +33,20 @@ export function AuthForm() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-purple-500 mb-4">
+            小目标追踪器
+          </h1>
+          <TypewriterText
+            texts={[
+              '粉末化你的任务截止时间到秒，追踪你的用时记录。',
+              '从历史记录平均时长中，修正你的逐个小目标用时。'
+            ]}
+            typingSpeed={80}
+            delayBetweenTexts={4000}
+          />
+        </div>
+
         <form onSubmit={handleSubmit} className="bg-[#151515] rounded-xl shadow-2xl p-8 border border-purple-900/20">
           <h2 className="text-2xl font-semibold mb-6 text-purple-400">
             {isSignUp ? '注册账号' : '登录账号'}

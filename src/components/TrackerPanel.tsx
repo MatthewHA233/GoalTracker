@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle } from 'lucide-react';
 import { Timer } from './Timer';
+import { Confetti } from './Confetti';
 
 interface TrackerPanelProps {
   totalElapsedTime: number;
@@ -35,8 +36,25 @@ export function TrackerPanel({
   onRecordTask,
   onTimerReset
 }: TrackerPanelProps) {
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  // 监听任务完成
+  useEffect(() => {
+    if (taskCount === totalTasks) {
+      onPause(); // 停止计时器
+      setShowConfetti(true);
+      // 5秒后关闭彩带动画
+      const timeout = setTimeout(() => {
+        setShowConfetti(false);
+      }, 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [taskCount, totalTasks, onPause]);
+
   return (
     <div className="bg-[#151515] rounded-xl shadow-2xl p-6 border border-purple-900/20">
+      <Confetti active={showConfetti} />
+      
       <Timer
         totalElapsedTime={totalElapsedTime}
         taskElapsedTime={taskElapsedTime}
