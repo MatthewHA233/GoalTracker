@@ -9,11 +9,20 @@ interface UserProfileProps {
 }
 
 export function UserProfile({ onClose, isTimerRunning }: UserProfileProps) {
-  const { taskStats, fetchTaskStats, deleteTaskRecord } = useTaskStore();
+  const { taskStats, fetchTaskStats, deleteTask, deleteTaskRecord } = useTaskStore();
 
   React.useEffect(() => {
     fetchTaskStats();
   }, [fetchTaskStats]);
+
+  const handleDeleteTask = async (taskName: string) => {
+    try {
+      await deleteTask(taskName);
+      alert('删除成功');
+    } catch (error) {
+      alert('删除失败');
+    }
+  };
 
   const handleDeleteRecord = async (recordId: string) => {
     if (!confirm('确定要删除这条记录吗？')) return;
@@ -51,9 +60,9 @@ export function UserProfile({ onClose, isTimerRunning }: UserProfileProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-[#0a0a0a] overflow-auto z-50">
-      <div className="max-w-4xl mx-auto p-4">
-        <div className="flex items-center justify-between mb-6">
+    <div className="fixed inset-0 bg-[#0a0a0a] z-50 flex flex-col">
+      <div className="flex items-center justify-between p-4 border-b border-purple-900/20">
+        <div className="flex items-center gap-4">
           <button
             onClick={onClose}
             className="flex items-center text-purple-300/60 hover:text-purple-300"
@@ -61,9 +70,18 @@ export function UserProfile({ onClose, isTimerRunning }: UserProfileProps) {
             <ArrowLeft className="w-5 h-5 mr-2" />
             返回
           </button>
+          <h1 className="text-xl font-semibold text-purple-400">历史任务记录</h1>
         </div>
+      </div>
 
-        <TaskStatsList stats={taskStats} onDeleteRecord={handleDeleteRecord} />
+      <div className="flex-1 overflow-auto p-4">
+        <div className="max-w-4xl mx-auto">
+          <TaskStatsList 
+            stats={taskStats}
+            onDeleteTask={handleDeleteTask}
+            onDeleteRecord={handleDeleteRecord}
+          />
+        </div>
       </div>
     </div>
   );

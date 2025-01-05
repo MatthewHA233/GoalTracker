@@ -1,29 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-
-interface Task {
-  id: string;
-  name: string;
-  created_at: string;
-}
-
-interface TaskRecord {
-  id: string;
-  created_at: string;
-  total_tasks: number;
-  completed_count: number;
-  measure_word: string;
-  average_time: number;
-}
-
-interface TaskStats {
-  name: string;
-  totalAverage: number;
-  totalCompleted: number;
-  totalTarget: number;
-  measureWord: string;
-  records: TaskRecord[];
-}
+import type { Task, TaskStats, TaskSuggestion } from '../types/task';
 
 interface TaskState {
   tasks: Task[];
@@ -37,6 +14,8 @@ interface TaskState {
   getCurrentRecord: (taskId: string) => Promise<any>;
   createTaskRecord: (taskId: string, totalTasks: number, measureWord: string, totalTimeMinutes: number) => Promise<any>;
   recordTaskSnapshot: (recordId: string, taskNumber: number, taskTimeSeconds: number, totalTimeSeconds: number) => Promise<void>;
+  getTaskSuggestion: (taskName: string) => TaskSuggestion | null;
+  updateTaskSuggestion: (taskName: string, settings: { speedAdjustment: number; sampleSize: number | null }) => void;
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
@@ -105,9 +84,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           statsMap.set(taskName, {
             name: taskName,
             totalAverage: 0,
+            suggestedAverage: 0,
             totalCompleted: 0,
             totalTarget: 0,
             measureWord: record.measure_word,
+            speedAdjustment: 0,
+            sampleSize: null,
             records: []
           });
         }
@@ -125,19 +107,50 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         });
       });
 
-      // 计算总平均时间
+      // 计算总平均时间和建议时间
       statsMap.forEach(stat => {
         const totalTime = stat.records.reduce(
           (sum, record) => sum + (record.average_time * record.completed_count),
           0
         );
         stat.totalAverage = totalTime / stat.totalCompleted;
+        stat.suggestedAverage = Math.round(stat.totalAverage * (1 + stat.speedAdjustment / 100));
       });
 
       set({ taskStats: Array.from(statsMap.values()) });
     } catch (error) {
       console.error('Error fetching task stats:', error);
     }
+  },
+
+  getTaskSuggestion: (taskName: string) => {
+    const stats = get().taskStats;
+    const taskStat = stats.find(stat => stat.name === taskName);
+    
+    if (!taskStat || taskStat.totalCompleted === 0) return null;
+
+    return {
+      measureWord: taskStat.measureWord,
+      averageTime: taskStat.suggestedAverage,
+      speedAdjustment: taskStat.speedAdjustment,
+      sampleSize: taskStat.sampleSize
+    };
+  },
+
+  updateTaskSuggestion: (taskName: string, settings: { speedAdjustment: number; sampleSize: number | null }) => {
+    const stats = get().taskStats;
+    const updatedStats = stats.map(stat => {
+      if (stat.name === taskName) {
+        return {
+          ...stat,
+          speedAdjustment: settings.speedAdjustment,
+          sampleSize: settings.sampleSize,
+          suggestedAverage: Math.round(stat.totalAverage * (1 + settings.speedAdjustment / 100))
+        };
+      }
+      return stat;
+    });
+    set({ taskStats: updatedStats });
   },
 
   createTask: async (name: string) => {
@@ -162,16 +175,6 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     return data;
   },
 
-  deleteTaskRecord: async (recordId: string) => {
-    const { error } = await supabase
-      .from('task_records')
-      .delete()
-      .eq('id', recordId);
-    
-    if (error) throw error;
-    await get().fetchTaskStats();
-  },
-
   deleteTask: async (taskName: string) => {
     const { error } = await supabase
       .from('tasks')
@@ -182,6 +185,16 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     
     const { tasks } = get();
     set({ tasks: tasks.filter(task => task.name !== taskName) });
+    await get().fetchTaskStats();
+  },
+
+  deleteTaskRecord: async (recordId: string) => {
+    const { error } = await supabase
+      .from('task_records')
+      .delete()
+      .eq('id', recordId);
+    
+    if (error) throw error;
     await get().fetchTaskStats();
   },
 

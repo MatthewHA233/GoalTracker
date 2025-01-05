@@ -8,6 +8,7 @@ interface TimerProps {
   taskElapsedTime: number;
   averageTimePerTask: number;
   taskCount: number;
+  totalTimeLimit: number; // 新增总时间限制
   isRunning: boolean;
   isOverTime: boolean;
   isTaskOverTime: boolean;
@@ -23,6 +24,7 @@ export function Timer({
   taskElapsedTime,
   averageTimePerTask,
   taskCount,
+  totalTimeLimit, // 新增参数
   isRunning,
   isOverTime,
   isTaskOverTime,
@@ -38,6 +40,9 @@ export function Timer({
   const animationFrameRef = React.useRef<number>();
   const offsetRef = React.useRef(0);
 
+  // 检查是否需要显示小时
+  const showHours = totalElapsedTime >= 3600 || taskElapsedTime >= 3600 || averageTimePerTask >= 3600;
+
   React.useEffect(() => {
     const updateTimer = (timestamp: number) => {
       if (!startTimeRef.current) {
@@ -48,18 +53,14 @@ export function Timer({
       const elapsed = timestamp - startTimeRef.current;
       const adjustedElapsed = elapsed + offsetRef.current;
       
-      // 提前15ms开始更新毫秒，使显示更流畅
       const msOffset = 15;
       
-      // 更新总时间的毫秒
       const totalMs = (adjustedElapsed % 1000) + msOffset;
       setTotalMilliseconds(Math.floor(totalMs / 10) % 100);
       
-      // 更新当前任务的毫秒
       const taskMs = ((adjustedElapsed + taskElapsedTime * 1000) % 1000) + msOffset;
       setTaskMilliseconds(Math.floor(taskMs / 10) % 100);
 
-      // 如果接近下一秒，增加偏移量以保持同步
       if (elapsed >= 1000) {
         startTimeRef.current = timestamp;
         offsetRef.current = adjustedElapsed % 1000;
@@ -85,13 +86,15 @@ export function Timer({
     };
   }, [isRunning, taskElapsedTime]);
 
-  // 只重置当前任务的毫秒计数
   React.useEffect(() => {
     if (shouldResetTimer) {
       setTaskMilliseconds(0);
       onTimerReset();
     }
   }, [shouldResetTimer, onTimerReset]);
+
+  // 计算当前目标时间进度，不超过总时间限制
+  const currentTargetTime = Math.min(averageTimePerTask * (taskCount + 1), totalTimeLimit);
 
   return (
     <>
@@ -140,22 +143,30 @@ export function Timer({
           <h3 className="text-sm sm:text-lg font-medium mb-2 sm:mb-4 text-purple-300">当前任务</h3>
           <div className="digital-display transform-none sm:transform">
             <div className={`time-value ${isTaskOverTime ? 'text-red-400' : 'text-purple-400'}`}>
-              <TimeDisplay seconds={taskElapsedTime} milliseconds={taskMilliseconds} />
+              <TimeDisplay 
+                seconds={taskElapsedTime} 
+                milliseconds={taskMilliseconds}
+                showHours={showHours}
+              />
             </div>
           </div>
           <div className="text-xs sm:text-sm text-purple-300/60 mt-2 sm:mt-4">
-            平均: {formatTimeWithPrecision(averageTimePerTask)}
+            平均目标时间: {formatTimeWithPrecision(averageTimePerTask)}
           </div>
         </div>
         <div className="text-center">
           <h3 className="text-sm sm:text-lg font-medium mb-2 sm:mb-4 text-purple-300">总时间</h3>
           <div className="digital-display transform-none sm:transform">
             <div className={`time-value ${isOverTime ? 'text-red-400' : 'text-purple-400'}`}>
-              <TimeDisplay seconds={totalElapsedTime} milliseconds={totalMilliseconds} />
+              <TimeDisplay 
+                seconds={totalElapsedTime} 
+                milliseconds={totalMilliseconds}
+                showHours={showHours}
+              />
             </div>
           </div>
           <div className="text-xs sm:text-sm text-purple-300/60 mt-2 sm:mt-4">
-            目标: {formatTimeWithPrecision(averageTimePerTask * (taskCount + 1))}
+            当前目标时间进度: {formatTimeWithPrecision(currentTargetTime)}
           </div>
         </div>
       </div>

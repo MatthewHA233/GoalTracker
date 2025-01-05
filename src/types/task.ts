@@ -1,3 +1,9 @@
+export interface Task {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
 export interface TaskSnapshot {
   taskNumber: number;
   taskTime: number;
@@ -16,8 +22,18 @@ export interface TaskRecord {
 export interface TaskStats {
   name: string;
   totalAverage: number;
+  suggestedAverage: number;
   totalCompleted: number;
   totalTarget: number;
   measureWord: string;
+  speedAdjustment: number;
+  sampleSize: number | null;
   records: TaskRecord[];
+}
+
+export interface TaskSuggestion {
+  measureWord: string;
+  averageTime: number;
+  speedAdjustment: number;
+  sampleSize: number | null;
 }

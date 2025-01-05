@@ -18,6 +18,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,
   loading: true,
+
   signUp: async (email: string, password: string, username?: string) => {
     const { error } = await supabase.auth.signUp({
       email,
@@ -28,6 +29,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
     if (error) throw error;
   },
+
   signIn: async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -35,35 +37,61 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
     if (error) throw error;
   },
+
   signOut: async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    set({ user: null, session: null });
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } finally {
+      // Always clear local state on sign out, regardless of error
+      set({ user: null, session: null });
+    }
   },
+
   initialize: async () => {
     try {
+      // Get initial session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
         set({ user: session.user, session });
       } else {
+        // If no session, ensure user is logged out
+        await supabase.auth.signOut();
         set({ user: null, session: null });
       }
     } catch (error) {
+      // Handle initialization errors gracefully
       console.error('Auth initialization error:', error);
+      // Ensure user is logged out on error
+      await supabase.auth.signOut();
       set({ user: null, session: null });
     } finally {
       set({ loading: false });
     }
 
     // Listen for auth changes
-    supabase.auth.onAuthStateChange((_event, session) => {
-      set({ 
-        user: session?.user ?? null,
-        session: session
-      });
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'TOKEN_REFRESHED') {
+          // Successfully refreshed token
+          set({ user: session?.user ?? null, session });
+        } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+          // Clear state on sign out or user deletion
+          set({ user: null, session: null });
+        } else {
+          // Update state for all other auth events
+          set({ user: session?.user ?? null, session });
+        }
+      }
+    );
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
   },
+
   updateProfile: async ({ username }) => {
     const { error } = await supabase.auth.updateUser({
       data: { username }
@@ -75,6 +103,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user: session.user, session });
     }
   },
+
   updatePassword: async (currentPassword: string, newPassword: string) => {
     // First verify current password
     const { data: { session } } = await supabase.auth.getSession();

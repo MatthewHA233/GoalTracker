@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle } from 'lucide-react';
 import { GoalForm } from './components/GoalForm';
 import { Timer } from './components/Timer';
 import { TaskList } from './components/TaskList';
@@ -16,9 +15,11 @@ function App() {
   const { user, loading: authLoading, initialize } = useAuthStore();
   const { createTask, createTaskRecord, recordTaskSnapshot } = useTaskStore();
   
+  const [taskName, setTaskName] = useState('');
   const [totalTasks, setTotalTasks] = useState(1);
   const [measureWord, setMeasureWord] = useState('个');
   const [totalTime, setTotalTime] = useState(60);
+  const [totalTimeLimit, setTotalTimeLimit] = useState(0);
   const [totalElapsedTime, setTotalElapsedTime] = useState(0);
   const [taskElapsedTime, setTaskElapsedTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -28,6 +29,7 @@ function App() {
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [currentRecordId, setCurrentRecordId] = useState<string | null>(null);
   const [shouldResetTimer, setShouldResetTimer] = useState(false);
+  const [averageTimePerTask, setAverageTimePerTask] = useState(60);
 
   useEffect(() => {
     initialize();
@@ -46,7 +48,7 @@ function App() {
     };
   }, [isRunning]);
 
-  const handleSubmit = async (e: React.FormEvent, taskName: string) => {
+  const handleSubmit = async (e: React.FormEvent, name: string) => {
     e.preventDefault();
     if (totalTasks <= 0 || totalTime <= 0) {
       alert('请输入有效的任务数和时间。');
@@ -54,17 +56,21 @@ function App() {
     }
 
     try {
-      const task = await createTask(taskName);
+      const task = await createTask(name);
+      setTaskName(name);
       setCurrentTaskId(task.id);
 
+      const totalMinutes = Math.ceil(totalTime);
       const record = await createTaskRecord(
         task.id,
         totalTasks,
         measureWord,
-        totalTime
+        totalMinutes
       );
       setCurrentRecordId(record.id);
-
+      
+      setTotalTimeLimit(totalTime * 60);
+      setAverageTimePerTask(totalTime * 60 / totalTasks);
       setShowTracker(true);
     } catch (error) {
       console.error('Error starting task:', error);
@@ -85,6 +91,7 @@ function App() {
     setCurrentTaskId(null);
     setCurrentRecordId(null);
     setShouldResetTimer(false);
+    setTaskName('');
   };
 
   const recordTask = async () => {
@@ -99,7 +106,6 @@ function App() {
     const currentTaskTime = taskElapsedTime;
     const currentTotalTime = totalElapsedTime;
 
-    // 先更新状态
     setTaskCount(newTaskCount);
     setShouldResetTimer(true);
     setTaskElapsedTime(0);
@@ -140,10 +146,6 @@ function App() {
     return <AuthForm />;
   }
 
-  const averageTimePerTask = totalTime * 60 / totalTasks;
-  const isOverTime = totalElapsedTime > averageTimePerTask * (taskCount + 1);
-  const isTaskOverTime = taskElapsedTime > averageTimePerTask;
-
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-4 md:p-8">
       <div className="max-w-[2000px] mx-auto">
@@ -171,14 +173,16 @@ function App() {
               averageTimePerTask={averageTimePerTask}
               taskCount={taskCount}
               totalTasks={totalTasks}
+              totalTimeLimit={totalTimeLimit}
               isRunning={isRunning}
-              isOverTime={isOverTime}
-              isTaskOverTime={isTaskOverTime}
+              isOverTime={totalElapsedTime > averageTimePerTask * (taskCount + 1)}
+              isTaskOverTime={taskElapsedTime > averageTimePerTask}
+              shouldResetTimer={shouldResetTimer}
+              taskName={taskName}
               onStart={startTimer}
               onPause={pauseTimer}
               onReset={resetTimer}
               onRecordTask={recordTask}
-              shouldResetTimer={shouldResetTimer}
               onTimerReset={() => setShouldResetTimer(false)}
             />
           )}

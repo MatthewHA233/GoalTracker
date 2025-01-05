@@ -8,14 +8,18 @@ interface TaskNameInputProps {
 }
 
 export function TaskNameInput({ value, onChange }: TaskNameInputProps) {
-  const { tasks = [], loading, fetchTasks, deleteTask } = useTaskStore();
+  const { tasks = [], loading, fetchTasks, fetchTaskStats, deleteTask } = useTaskStore();
   const [isCreatingNew, setIsCreatingNew] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchTasks().catch(console.error);
-  }, [fetchTasks]);
+    // 初始化时获取任务列表和统计数据
+    Promise.all([
+      fetchTasks(),
+      fetchTaskStats()
+    ]).catch(console.error);
+  }, [fetchTasks, fetchTaskStats]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -67,6 +71,7 @@ export function TaskNameInput({ value, onChange }: TaskNameInputProps) {
             onChange={(e) => {
               onChange(e.target.value);
               setIsCreatingNew(true);
+              setShowDropdown(true);
             }}
             onFocus={() => setShowDropdown(true)}
             placeholder="输入任务名称"

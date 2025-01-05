@@ -10,6 +10,8 @@ interface NumberInputProps {
   label?: string;
   onLabelChange?: (value: string) => void;
   className?: string;
+  disabled?: boolean;
+  hint?: string;
 }
 
 export function NumberInput({
@@ -20,27 +22,33 @@ export function NumberInput({
   step = 1,
   label,
   onLabelChange,
-  className = ''
+  className = '',
+  disabled = false,
+  hint
 }: NumberInputProps) {
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [tempLabel, setTempLabel] = useState(label || '');
   const [inputValue, setInputValue] = useState(value.toString());
 
   const handleChange = (newValue: number) => {
+    if (disabled) return;
     const clampedValue = Math.min(max, Math.max(min, newValue));
     onChange(clampedValue);
     setInputValue(clampedValue.toString());
   };
 
   const increment = (amount: number = step) => {
+    if (disabled) return;
     handleChange(value + amount);
   };
 
   const decrement = (amount: number = step) => {
+    if (disabled) return;
     handleChange(value - amount);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
     const val = e.target.value;
     setInputValue(val);
     
@@ -53,6 +61,7 @@ export function NumberInput({
   };
 
   const handleInputBlur = () => {
+    if (disabled) return;
     if (inputValue === '') {
       handleChange(min);
     } else {
@@ -66,9 +75,8 @@ export function NumberInput({
   };
 
   const handleLabelClick = () => {
-    if (onLabelChange) {
-      setIsEditingLabel(true);
-    }
+    if (disabled || !onLabelChange) return;
+    setIsEditingLabel(true);
   };
 
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,19 +97,29 @@ export function NumberInput({
   };
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-2 ${className} ${disabled ? 'opacity-50' : ''}`}>
       <div className="flex flex-col gap-0.5">
         <button
           type="button"
           onClick={() => increment()}
-          className="p-1 hover:bg-purple-500/10 text-purple-300/60 hover:text-purple-300 transition-colors rounded-md"
+          disabled={disabled}
+          className={`p-1 ${
+            disabled 
+              ? 'text-purple-300/30'
+              : 'hover:bg-purple-500/10 text-purple-300/60 hover:text-purple-300'
+          } transition-colors rounded-md`}
         >
           <ChevronUp className="w-4 h-4" />
         </button>
         <button
           type="button"
           onClick={() => decrement()}
-          className="p-1 hover:bg-purple-500/10 text-purple-300/60 hover:text-purple-300 transition-colors rounded-md"
+          disabled={disabled}
+          className={`p-1 ${
+            disabled 
+              ? 'text-purple-300/30'
+              : 'hover:bg-purple-500/10 text-purple-300/60 hover:text-purple-300'
+          } transition-colors rounded-md`}
         >
           <ChevronDown className="w-4 h-4" />
         </button>
@@ -112,10 +130,15 @@ export function NumberInput({
           value={inputValue}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
-          className="w-full px-3 py-2 bg-[#1a1a1a] border border-purple-900/30 rounded-lg text-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all appearance-none"
+          disabled={disabled}
+          className={`w-full px-3 py-2 bg-[#1a1a1a] border border-purple-900/30 rounded-lg text-purple-100 ${
+            disabled 
+              ? 'cursor-not-allowed'
+              : 'focus:outline-none focus:ring-2 focus:ring-purple-500/50'
+          } transition-all appearance-none`}
         />
         {label && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
             {isEditingLabel ? (
               <input
                 type="text"
@@ -127,12 +150,19 @@ export function NumberInput({
                 autoFocus
               />
             ) : (
-              <span
-                onClick={handleLabelClick}
-                className={`text-purple-300/60 text-sm ${onLabelChange ? 'cursor-pointer hover:text-purple-300' : ''}`}
-              >
-                {label}
-              </span>
+              <>
+                <span
+                  onClick={handleLabelClick}
+                  className={`text-purple-300/60 text-sm ${
+                    onLabelChange && !disabled ? 'cursor-pointer hover:text-purple-300' : ''
+                  }`}
+                >
+                  {label}
+                </span>
+                {hint && (
+                  <span className="text-xs text-purple-300/40">({hint})</span>
+                )}
+              </>
             )}
           </div>
         )}
