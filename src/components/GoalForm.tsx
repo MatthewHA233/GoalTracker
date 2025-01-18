@@ -4,6 +4,7 @@ import { NumberInput } from './NumberInput';
 import { TaskNameInput } from './TaskNameInput';
 import { useTaskStore } from '../stores/taskStore';
 import { formatTimeWithUnit } from '../utils/timeUtils';
+import { Play } from 'lucide-react';
 
 interface GoalFormProps {
   totalTasks: number;
@@ -13,6 +14,7 @@ interface GoalFormProps {
   onMeasureWordChange: (value: string) => void;
   onTotalTimeChange: (value: number) => void;
   onSubmit: (e: React.FormEvent, taskName: string) => void;
+  onContinueRecord: (record: any, taskName: string) => void;
 }
 
 export function GoalForm({
@@ -22,14 +24,25 @@ export function GoalForm({
   onTotalTasksChange,
   onMeasureWordChange,
   onTotalTimeChange,
-  onSubmit
+  onSubmit,
+  onContinueRecord
 }: GoalFormProps) {
   const [taskName, setTaskName] = useState('');
-  const [timeKey, setTimeKey] = useState(0); // 用于强制重新渲染TimeInput
-  const { getTaskSuggestion } = useTaskStore();
+  const [timeKey, setTimeKey] = useState(0);
+  const { getTaskSuggestion, taskStats } = useTaskStore();
   
   // 获取任务的建议时长和量词
   const suggestion = getTaskSuggestion(taskName);
+
+  // 获取最近一个未完成的任务记录
+  const lastUnfinishedRecord = taskStats.reduce<{ record: any; taskName: string } | null>((result, stat) => {
+    if (result) return result;
+    const unfinishedRecord = stat.records.find(record => record.completed_count < record.total_tasks);
+    if (unfinishedRecord) {
+      return { record: unfinishedRecord, taskName: stat.name };
+    }
+    return null;
+  }, null);
 
   // 当选择任务时自动设置量词
   useEffect(() => {
@@ -69,6 +82,22 @@ export function GoalForm({
 
   return (
     <div className="bg-[#151515] rounded-xl shadow-2xl p-8 mb-8 border border-purple-900/20">
+      {lastUnfinishedRecord && (
+        <div className="mb-6 flex items-center justify-between bg-[#1a1a1a] rounded-lg p-4 border border-purple-900/20">
+          <div className="text-sm text-purple-300/60">
+            上次「{lastUnfinishedRecord.taskName}」未完成
+            （{lastUnfinishedRecord.record.completed_count}/{lastUnfinishedRecord.record.total_tasks} {lastUnfinishedRecord.record.measure_word}）
+          </div>
+          <button
+            onClick={() => onContinueRecord(lastUnfinishedRecord.record, lastUnfinishedRecord.taskName)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white rounded-lg transition-colors text-sm"
+          >
+            <Play className="w-4 h-4" />
+            继续任务
+          </button>
+        </div>
+      )}
+
       <h2 className="text-2xl font-semibold mb-6 text-purple-400">设置目标</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         <TaskNameInput

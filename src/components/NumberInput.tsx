@@ -97,31 +97,31 @@ export function NumberInput({
   };
 
   return (
-    <div className={`flex items-center gap-2 ${className} ${disabled ? 'opacity-50' : ''}`}>
+    <div className={`flex items-center gap-1 sm:gap-2 ${className} ${disabled ? 'opacity-50' : ''}`}>
       <div className="flex flex-col gap-0.5">
         <button
           type="button"
           onClick={() => increment()}
           disabled={disabled}
-          className={`p-1 ${
+          className={`p-0.5 sm:p-1 ${
             disabled 
               ? 'text-purple-300/30'
               : 'hover:bg-purple-500/10 text-purple-300/60 hover:text-purple-300'
           } transition-colors rounded-md`}
         >
-          <ChevronUp className="w-4 h-4" />
+          <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4" />
         </button>
         <button
           type="button"
           onClick={() => decrement()}
           disabled={disabled}
-          className={`p-1 ${
+          className={`p-0.5 sm:p-1 ${
             disabled 
               ? 'text-purple-300/30'
               : 'hover:bg-purple-500/10 text-purple-300/60 hover:text-purple-300'
           } transition-colors rounded-md`}
         >
-          <ChevronDown className="w-4 h-4" />
+          <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
         </button>
       </div>
       <div className="relative flex-1">
@@ -131,14 +131,14 @@ export function NumberInput({
           onChange={handleInputChange}
           onBlur={handleInputBlur}
           disabled={disabled}
-          className={`w-full px-3 py-2 bg-[#1a1a1a] border border-purple-900/30 rounded-lg text-purple-100 ${
+          className={`w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-[#1a1a1a] border border-purple-900/30 rounded-lg text-purple-100 text-sm sm:text-base ${
             disabled 
               ? 'cursor-not-allowed'
               : 'focus:outline-none focus:ring-2 focus:ring-purple-500/50'
           } transition-all appearance-none`}
         />
         {label && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+          <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:gap-2">
             {isEditingLabel ? (
               <input
                 type="text"
@@ -146,21 +146,21 @@ export function NumberInput({
                 onChange={handleLabelChange}
                 onBlur={handleLabelBlur}
                 onKeyDown={handleLabelKeyDown}
-                className="w-12 px-1 py-0.5 bg-[#1a1a1a] border border-purple-500/30 rounded text-purple-100 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+                className="w-8 sm:w-12 px-1 py-0.5 bg-[#1a1a1a] border border-purple-500/30 rounded text-purple-100 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-purple-500/50"
                 autoFocus
               />
             ) : (
               <>
                 <span
                   onClick={handleLabelClick}
-                  className={`text-purple-300/60 text-sm ${
+                  className={`text-purple-300/60 text-xs sm:text-sm ${
                     onLabelChange && !disabled ? 'cursor-pointer hover:text-purple-300' : ''
                   }`}
                 >
                   {label}
                 </span>
                 {hint && (
-                  <span className="text-xs text-purple-300/40">({hint})</span>
+                  <span className="text-xs text-purple-300/40 hidden sm:inline">({hint})</span>
                 )}
               </>
             )}

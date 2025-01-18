@@ -6,9 +6,10 @@ import { ClipboardList } from 'lucide-react';
 interface UserButtonProps {
   isTimerRunning: boolean;
   onTimerPause?: () => void;
+  onContinueRecord: (record: any, taskName: string) => void;
 }
 
-export function UserButton({ isTimerRunning, onTimerPause }: UserButtonProps) {
+export function UserButton({ isTimerRunning, onTimerPause, onContinueRecord }: UserButtonProps) {
   const { user } = useAuthStore();
   const [showProfile, setShowProfile] = useState(false);
 
@@ -40,6 +41,7 @@ export function UserButton({ isTimerRunning, onTimerPause }: UserButtonProps) {
         <UserProfile
           onClose={() => setShowProfile(false)}
           isTimerRunning={isTimerRunning}
+          onContinueRecord={onContinueRecord}
         />
       )}
     </>

@@ -14,7 +14,7 @@ import { supabase } from './lib/supabase';
 
 function App() {
   const { user, loading: authLoading, initialize } = useAuthStore();
-  const { createTask, createTaskRecord, recordTaskSnapshot } = useTaskStore();
+  const { createTask, createTaskRecord, recordTaskSnapshot, fetchTaskStats } = useTaskStore();
   
   const [taskName, setTaskName] = useState('');
   const [totalTasks, setTotalTasks] = useState(1);
@@ -31,6 +31,12 @@ function App() {
   const [currentRecordId, setCurrentRecordId] = useState<string | null>(null);
   const [shouldResetTimer, setShouldResetTimer] = useState(false);
   const [averageTimePerTask, setAverageTimePerTask] = useState(60);
+
+  useEffect(() => {
+    if (user) {
+      fetchTaskStats();
+    }
+  }, [user, fetchTaskStats]);
 
   useEffect(() => {
     initialize();
@@ -148,6 +154,18 @@ function App() {
     setShowTracker(true);
   };
 
+  const handleTotalTimeChange = (minutes: number) => {
+    setTotalTime(minutes);
+    setTotalTimeLimit(minutes * 60);
+    setAverageTimePerTask(minutes * 60 / totalTasks);
+  };
+
+  const handleTotalTasksChange = (count: number) => {
+    if (count < taskCount + 1) return;
+    setTotalTasks(count);
+    setAverageTimePerTask(totalTimeLimit / count);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -180,6 +198,7 @@ function App() {
               onMeasureWordChange={setMeasureWord}
               onTotalTimeChange={setTotalTime}
               onSubmit={handleSubmit}
+              onContinueRecord={handleContinueRecord}
             />
           ) : (
             <TrackerPanel
@@ -199,6 +218,8 @@ function App() {
               onReset={resetTimer}
               onRecordTask={recordTask}
               onTimerReset={() => setShouldResetTimer(false)}
+              onTotalTimeChange={handleTotalTimeChange}
+              onTotalTasksChange={handleTotalTasksChange}
             />
           )}
         </div>

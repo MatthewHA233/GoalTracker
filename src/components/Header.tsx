@@ -8,9 +8,10 @@ interface HeaderProps {
   isTimerRunning: boolean;
   onTimerPause: () => void;
   showTitle?: boolean;
+  onContinueRecord: (record: any, taskName: string) => void;
 }
 
-export function Header({ isTimerRunning, onTimerPause, showTitle = true }: HeaderProps) {
+export function Header({ isTimerRunning, onTimerPause, showTitle = true, onContinueRecord }: HeaderProps) {
   const [showSettings, setShowSettings] = useState(false);
 
   const handleSettingsClick = () => {
@@ -35,6 +36,7 @@ export function Header({ isTimerRunning, onTimerPause, showTitle = true }: Heade
           <UserButton
             isTimerRunning={isTimerRunning}
             onTimerPause={onTimerPause}
+            onContinueRecord={onContinueRecord}
           />
           <button
             onClick={handleSettingsClick}

@@ -24,10 +24,10 @@ export function TimeInput({ hours, minutes, seconds, onChange, disabled = false 
   };
 
   return (
-    <div className={`flex items-center gap-2 ${disabled ? 'opacity-50' : ''}`}>
-      <Clock className="w-5 h-5 text-purple-400" />
-      <div className="flex-1 flex gap-2">
-        <div className="flex-1">
+    <div className={`flex items-start sm:items-center gap-2 flex-col sm:flex-row ${disabled ? 'opacity-50' : ''}`}>
+      <Clock className="w-5 h-5 text-purple-400 hidden sm:block" />
+      <div className="flex-1 grid grid-cols-3 gap-1.5 sm:gap-2 w-full">
+        <div>
           <NumberInput
             value={hours}
             onChange={handleHoursChange}
@@ -37,7 +37,7 @@ export function TimeInput({ hours, minutes, seconds, onChange, disabled = false 
             disabled={disabled}
           />
         </div>
-        <div className="flex-1">
+        <div>
           <NumberInput
             value={minutes}
             onChange={handleMinutesChange}
@@ -47,7 +47,7 @@ export function TimeInput({ hours, minutes, seconds, onChange, disabled = false 
             disabled={disabled}
           />
         </div>
-        <div className="flex-1">
+        <div>
           <NumberInput
             value={seconds}
             onChange={handleSecondsChange}
