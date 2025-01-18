@@ -5,6 +5,7 @@ import { Confetti } from './Confetti';
 import { formatTimeWithUnit } from '../utils/timeUtils';
 import { TimeInput } from './TimeInput';
 import { NumberInput } from './NumberInput';
+import { useTaskStore } from '../stores/taskStore';
 
 interface TrackerPanelProps {
   totalElapsedTime: number;
@@ -56,11 +57,11 @@ export function TrackerPanel({
     seconds: totalTimeLimit % 60
   });
   const [tempTasks, setTempTasks] = useState(totalTasks);
-
-  // 计算当前平均用时（基于已完成的任务）
-  const currentAverageTime = taskCount > 0
-    ? Math.round(totalElapsedTime / taskCount)
-    : averageTimePerTask;
+  
+  // 获取当前任务的历史记录平均用时
+  const { taskStats } = useTaskStore();
+  const taskStat = taskStats.find(stat => stat.name === taskName);
+  const recordAverageTime = taskStat?.records[0]?.average_time || averageTimePerTask;
 
   useEffect(() => {
     if (taskCount === totalTasks) {
@@ -118,8 +119,9 @@ export function TrackerPanel({
   };
 
   const handleApplyCurrentAverage = () => {
-    if (onTotalTimeChange && taskCount > 0) {
-      const suggestedTotalMinutes = (currentAverageTime * totalTasks) / 60;
+    if (onTotalTimeChange) {
+      // 使用当前任务记录的平均用时乘以总任务数
+      const suggestedTotalMinutes = (recordAverageTime * totalTasks) / 60;
       onTotalTimeChange(suggestedTotalMinutes);
     }
     setIsEditingTime(false);
@@ -144,12 +146,12 @@ export function TrackerPanel({
                 onChange={handleTimeChange}
               />
               <div className="flex items-center gap-2">
-                {taskCount > 0 && (
+                {taskStat?.records[0] && (
                   <button
                     onClick={handleApplyCurrentAverage}
                     className="text-sm text-purple-300/60 hover:text-purple-300 transition-colors"
                   >
-                    使用当前平均用时 ({formatTimeWithUnit(currentAverageTime)})
+                    使用历史平均用时 ({formatTimeWithUnit(recordAverageTime)})
                   </button>
                 )}
                 <button
