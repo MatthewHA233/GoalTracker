@@ -98,8 +98,6 @@ export function TrackerPanel({
     if (onTotalTasksChange && tempTasks >= taskCount + 1) {
       onTotalTasksChange(tempTasks);
       setHasTasksChanged(true);
-      // 自动打开时间编辑器
-      handleEditTimeClick();
     }
     setIsEditingTasks(false);
   };
@@ -156,7 +154,7 @@ export function TrackerPanel({
                 {taskStat?.records[0] && (
                   <button
                     onClick={handleApplyCurrentAverage}
-                    className={`text-sm ${hasTasksChanged ? 'text-green-400' : 'text-purple-300/60'} hover:text-green-400 transition-colors`}
+                    className="text-sm text-purple-300/60 hover:text-green-400 transition-colors"
                   >
                     沿用历史平均用时 ({formatTimeWithUnit(suggestedTotalTime)})
                   </button>
@@ -176,23 +174,38 @@ export function TrackerPanel({
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2 text-sm">
-              <Clock className="w-4 h-4" />
-              <span className={hasTasksChanged ? 'text-red-400' : 'text-purple-300/60'}>
-                目标总时长: {formatTimeWithUnit(totalTimeLimit)}
-              </span>
-              <button
-                onClick={handleEditTimeClick}
-                className={`p-1.5 ${
-                  hasTasksChanged 
-                    ? 'text-red-400 hover:text-red-400 hover:bg-red-400/10' 
-                    : 'text-purple-300/60 hover:text-purple-300 hover:bg-purple-500/10'
-                } rounded-lg transition-colors`}
-                title="修改总时长"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <>
+              <div className="flex items-center justify-center gap-2 text-sm">
+                <Clock className="w-4 h-4" />
+                <span className={hasTasksChanged ? 'text-red-400' : 'text-purple-300/60'}>
+                  目标总时长: {formatTimeWithUnit(totalTimeLimit)}
+                </span>
+                <button
+                  onClick={handleEditTimeClick}
+                  className={`p-1.5 ${
+                    hasTasksChanged 
+                      ? 'text-red-400 hover:text-red-400 hover:bg-red-400/10' 
+                      : 'text-purple-300/60 hover:text-purple-300 hover:bg-purple-500/10'
+                  } rounded-lg transition-colors`}
+                  title="修改总时长"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              {hasTasksChanged && taskStat?.records[0] && (
+                <div className="mt-1.5 text-center">
+                  <button
+                    onClick={handleApplyCurrentAverage}
+                    className="px-2.5 py-1 rounded-md bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors text-xs"
+                  >
+                    点击使用历史平均速度计算总时长
+                    <span className="block text-[11px] text-green-400/60">
+                      建议时长：{formatTimeWithUnit(suggestedTotalTime)}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
