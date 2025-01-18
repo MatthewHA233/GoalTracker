@@ -57,11 +57,13 @@ export function TrackerPanel({
     seconds: totalTimeLimit % 60
   });
   const [tempTasks, setTempTasks] = useState(totalTasks);
+  const [hasTasksChanged, setHasTasksChanged] = useState(false);
   
   // 获取当前任务的历史记录平均用时
   const { taskStats } = useTaskStore();
   const taskStat = taskStats.find(stat => stat.name === taskName);
   const recordAverageTime = taskStat?.records[0]?.average_time || averageTimePerTask;
+  const suggestedTotalTime = recordAverageTime * totalTasks;
 
   useEffect(() => {
     if (taskCount === totalTasks) {
@@ -87,6 +89,7 @@ export function TrackerPanel({
     if (onTotalTimeChange) {
       const totalMinutes = tempTime.hours * 60 + tempTime.minutes + tempTime.seconds / 60;
       onTotalTimeChange(totalMinutes);
+      setHasTasksChanged(false);
     }
     setIsEditingTime(false);
   };
@@ -94,6 +97,9 @@ export function TrackerPanel({
   const handleTasksSubmit = () => {
     if (onTotalTasksChange && tempTasks >= taskCount + 1) {
       onTotalTasksChange(tempTasks);
+      setHasTasksChanged(true);
+      // 自动打开时间编辑器
+      handleEditTimeClick();
     }
     setIsEditingTasks(false);
   };
@@ -121,8 +127,9 @@ export function TrackerPanel({
   const handleApplyCurrentAverage = () => {
     if (onTotalTimeChange) {
       // 使用当前任务记录的平均用时乘以总任务数
-      const suggestedTotalMinutes = (recordAverageTime * totalTasks) / 60;
+      const suggestedTotalMinutes = suggestedTotalTime / 60;
       onTotalTimeChange(suggestedTotalMinutes);
+      setHasTasksChanged(false);
     }
     setIsEditingTime(false);
   };
@@ -149,9 +156,9 @@ export function TrackerPanel({
                 {taskStat?.records[0] && (
                   <button
                     onClick={handleApplyCurrentAverage}
-                    className="text-sm text-purple-300/60 hover:text-purple-300 transition-colors"
+                    className={`text-sm ${hasTasksChanged ? 'text-green-400' : 'text-purple-300/60'} hover:text-green-400 transition-colors`}
                   >
-                    使用历史平均用时 ({formatTimeWithUnit(recordAverageTime)})
+                    沿用历史平均用时 ({formatTimeWithUnit(suggestedTotalTime)})
                   </button>
                 )}
                 <button
@@ -169,12 +176,18 @@ export function TrackerPanel({
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2 text-sm text-purple-300/60">
+            <div className="flex items-center justify-center gap-2 text-sm">
               <Clock className="w-4 h-4" />
-              <span>目标总时长: {formatTimeWithUnit(totalTimeLimit)}</span>
+              <span className={hasTasksChanged ? 'text-red-400' : 'text-purple-300/60'}>
+                目标总时长: {formatTimeWithUnit(totalTimeLimit)}
+              </span>
               <button
                 onClick={handleEditTimeClick}
-                className="p-1.5 text-purple-300/60 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg transition-colors"
+                className={`p-1.5 ${
+                  hasTasksChanged 
+                    ? 'text-red-400 hover:text-red-400 hover:bg-red-400/10' 
+                    : 'text-purple-300/60 hover:text-purple-300 hover:bg-purple-500/10'
+                } rounded-lg transition-colors`}
                 title="修改总时长"
               >
                 <Edit2 className="w-3.5 h-3.5" />
