@@ -17,6 +17,9 @@ export interface TaskRecord {
   completed_count: number;
   measure_word: string;
   average_time: number;
+  task_id: string;
+  task_name: string; // 添加任务名称字段
+  total_time_minutes: number; // 添加总时间字段
 }
 
 export interface TaskStats {

@@ -5,11 +5,12 @@ import { TaskList } from './components/TaskList';
 import { AuthForm } from './components/AuthForm';
 import { UserButton } from './components/UserButton';
 import { showTaskCompletionNotification } from './utils/notifications';
-import { TaskSnapshot } from './types/task';
+import { TaskSnapshot, TaskRecord } from './types/task';
 import { useAuthStore } from './stores/authStore';
 import { useTaskStore } from './stores/taskStore';
 import { Header } from './components/Header';
 import { TrackerPanel } from './components/TrackerPanel';
+import { supabase } from './lib/supabase';
 
 function App() {
   const { user, loading: authLoading, initialize } = useAuthStore();
@@ -134,6 +135,19 @@ function App() {
     }
   };
 
+  const handleContinueRecord = (record: TaskRecord, taskName: string) => {
+    setTaskName(taskName);
+    setTotalTasks(record.total_tasks);
+    setMeasureWord(record.measure_word);
+    setTotalTime(record.total_time_minutes);
+    setTaskCount(record.completed_count);
+    setCurrentTaskId(record.task_id);
+    setCurrentRecordId(record.id);
+    setTotalTimeLimit(record.total_time_minutes * 60);
+    setAverageTimePerTask(record.total_time_minutes * 60 / record.total_tasks);
+    setShowTracker(true);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -154,6 +168,7 @@ function App() {
             isTimerRunning={isRunning} 
             onTimerPause={pauseTimer}
             showTitle={!showTracker}
+            onContinueRecord={handleContinueRecord}
           />
 
           {!showTracker ? (

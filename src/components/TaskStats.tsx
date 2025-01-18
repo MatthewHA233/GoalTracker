@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { TaskRecordsList } from './TaskRecordsList';
 import { formatTime } from '../utils/timeUtils';
@@ -8,9 +8,17 @@ interface TaskStatsProps {
   stat: TaskStats;
   onDeleteTask: (taskName: string) => void;
   onDeleteRecord: (recordId: string) => void;
+  onContinueRecord: (record: any, taskName: string) => void;
+  onClose?: () => void;
 }
 
-export function TaskStats({ stat, onDeleteTask, onDeleteRecord }: TaskStatsProps) {
+export function TaskStats({ 
+  stat, 
+  onDeleteTask, 
+  onDeleteRecord, 
+  onContinueRecord,
+  onClose 
+}: TaskStatsProps) {
   const handleDeleteTask = () => {
     if (confirm(`确定要删除"${stat.name}"及其所有记录吗？`)) {
       onDeleteTask(stat.name);
@@ -38,6 +46,8 @@ export function TaskStats({ stat, onDeleteTask, onDeleteRecord }: TaskStatsProps
         records={stat.records}
         measureWord={stat.measureWord}
         onDeleteRecord={onDeleteRecord}
+        onContinueRecord={onContinueRecord}
+        onClose={onClose}
       />
     </div>
   );

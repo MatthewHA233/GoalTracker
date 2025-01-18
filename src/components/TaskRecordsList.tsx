@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Play } from 'lucide-react';
 import { TaskSnapshots } from './TaskSnapshots';
 import { supabase } from '../lib/supabase';
 import { formatTime } from '../utils/timeUtils';
@@ -11,9 +11,17 @@ interface TaskRecordsListProps {
   records: TaskRecord[];
   measureWord: string;
   onDeleteRecord: (recordId: string) => void;
+  onContinueRecord: (record: TaskRecord, taskName: string) => void;
+  onClose?: () => void;
 }
 
-export function TaskRecordsList({ records, measureWord, onDeleteRecord }: TaskRecordsListProps) {
+export function TaskRecordsList({ 
+  records, 
+  measureWord, 
+  onDeleteRecord, 
+  onContinueRecord,
+  onClose 
+}: TaskRecordsListProps) {
   const [expandedRecords, setExpandedRecords] = useState<string[]>([]);
   const [snapshotsMap, setSnapshotsMap] = useState<Record<string, any[]>>({});
   const [loadingRecords, setLoadingRecords] = useState<string[]>([]);
@@ -45,6 +53,15 @@ export function TaskRecordsList({ records, measureWord, onDeleteRecord }: TaskRe
     }
   };
 
+  const handleContinue = (record: TaskRecord, taskName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onContinueRecord(record, taskName);
+    // 如果提供了 onClose 函数，则调用它来关闭用户资料面板
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
     <div className="space-y-4">
       {records.map((record, index) => (
@@ -67,6 +84,15 @@ export function TaskRecordsList({ records, measureWord, onDeleteRecord }: TaskRe
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {record.completed_count < record.total_tasks && (
+                  <button
+                    onClick={(e) => handleContinue(record, record.task_name, e)}
+                    className="p-2 text-green-400/60 hover:text-green-400 hover:bg-green-400/10 rounded-lg transition-colors"
+                    title="继续未完成的任务"
+                  >
+                    <Play className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

@@ -7,9 +7,17 @@ interface TaskStatsListProps {
   stats: TaskStatsType[];
   onDeleteTask: (taskName: string) => void;
   onDeleteRecord: (recordId: string) => void;
+  onContinueRecord: (record: any, taskName: string) => void;
+  onClose?: () => void;
 }
 
-export function TaskStatsList({ stats, onDeleteTask, onDeleteRecord }: TaskStatsListProps) {
+export function TaskStatsList({ 
+  stats, 
+  onDeleteTask, 
+  onDeleteRecord, 
+  onContinueRecord,
+  onClose 
+}: TaskStatsListProps) {
   if (stats.length === 0) {
     return (
       <div className="bg-[#151515] rounded-xl p-8 text-center">
@@ -28,6 +36,8 @@ export function TaskStatsList({ stats, onDeleteTask, onDeleteRecord }: TaskStats
           stat={stat}
           onDeleteTask={onDeleteTask}
           onDeleteRecord={onDeleteRecord}
+          onContinueRecord={onContinueRecord}
+          onClose={onClose}
         />
       ))}
     </div>

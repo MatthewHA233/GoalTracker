@@ -6,6 +6,7 @@ interface TaskState {
   tasks: Task[];
   taskStats: TaskStats[];
   loading: boolean;
+  error: string | null;
   fetchTasks: () => Promise<void>;
   fetchTaskStats: () => Promise<void>;
   createTask: (name: string) => Promise<Task>;
@@ -18,112 +19,8 @@ interface TaskState {
   updateTaskSuggestion: (taskName: string, settings: { speedAdjustment: number; sampleSize: number | null }) => void;
 }
 
-export const useTaskStore = create<TaskState>((set, get) => ({
-  tasks: [],
-  taskStats: [],
-  loading: false,
-
-  fetchTasks: async () => {
-    set({ loading: true });
-    try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      // 去重任务名称
-      const uniqueTasks = data.reduce((acc: Task[], curr) => {
-        if (!acc.some(task => task.name === curr.name)) {
-          acc.push(curr);
-        }
-        return acc;
-      }, []);
-      
-      set({ tasks: uniqueTasks });
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    } finally {
-      set({ loading: false });
-    }
-  },
-
-  fetchTaskStats: async () => {
-    try {
-      const { data, error } = await supabase
-        .from('task_records')
-        .select(`
-          id,
-          task_id,
-          total_tasks,
-          completed_count,
-          measure_word,
-          created_at,
-          tasks (
-            name
-          ),
-          task_snapshots (
-            task_time_seconds
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const statsMap = new Map<string, TaskStats>();
-
-      data.forEach((record: any) => {
-        const taskName = record.tasks.name;
-        const averageTime = record.task_snapshots.reduce(
-          (sum: number, snapshot: any) => sum + snapshot.task_time_seconds, 
-          0
-        ) / (record.completed_count || 1);
-
-        if (!statsMap.has(taskName)) {
-          statsMap.set(taskName, {
-            name: taskName,
-            totalAverage: 0,
-            suggestedAverage: 0,
-            totalCompleted: 0,
-            totalTarget: 0,
-            measureWord: record.measure_word,
-            speedAdjustment: 0,
-            sampleSize: null,
-            records: []
-          });
-        }
-
-        const stat = statsMap.get(taskName)!;
-        stat.totalCompleted += record.completed_count;
-        stat.totalTarget += record.total_tasks;
-        stat.records.push({
-          id: record.id,
-          created_at: record.created_at,
-          total_tasks: record.total_tasks,
-          completed_count: record.completed_count,
-          measure_word: record.measure_word,
-          average_time: averageTime
-        });
-      });
-
-      // 计算总平均时间和建议时间
-      statsMap.forEach(stat => {
-        const totalTime = stat.records.reduce(
-          (sum, record) => sum + (record.average_time * record.completed_count),
-          0
-        );
-        stat.totalAverage = totalTime / stat.totalCompleted;
-        stat.suggestedAverage = Math.round(stat.totalAverage * (1 + stat.speedAdjustment / 100));
-      });
-
-      set({ taskStats: Array.from(statsMap.values()) });
-    } catch (error) {
-      console.error('Error fetching task stats:', error);
-    }
-  },
-
-  getTaskSuggestion: (taskName: string) => {
+export const useTaskStore = create<TaskState>((set, get) => {
+  const getTaskSuggestion = (taskName: string): TaskSuggestion | null => {
     const stats = get().taskStats;
     const taskStat = stats.find(stat => stat.name === taskName);
     
@@ -135,9 +32,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       speedAdjustment: taskStat.speedAdjustment,
       sampleSize: taskStat.sampleSize
     };
-  },
+  };
 
-  updateTaskSuggestion: (taskName: string, settings: { speedAdjustment: number; sampleSize: number | null }) => {
+  const updateTaskSuggestion = (taskName: string, settings: { speedAdjustment: number; sampleSize: number | null }) => {
     const stats = get().taskStats;
     const updatedStats = stats.map(stat => {
       if (stat.name === taskName) {
@@ -151,9 +48,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       return stat;
     });
     set({ taskStats: updatedStats });
-  },
+  };
 
-  createTask: async (name: string) => {
+  const createTask = async (name: string): Promise<Task> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('未登录');
 
@@ -173,9 +70,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       set({ tasks: [data, ...tasks] });
     }
     return data;
-  },
+  };
 
-  deleteTask: async (taskName: string) => {
+  const deleteTask = async (taskName: string): Promise<void> => {
     const { error } = await supabase
       .from('tasks')
       .delete()
@@ -186,9 +83,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const { tasks } = get();
     set({ tasks: tasks.filter(task => task.name !== taskName) });
     await get().fetchTaskStats();
-  },
+  };
 
-  deleteTaskRecord: async (recordId: string) => {
+  const deleteTaskRecord = async (recordId: string): Promise<void> => {
     const { error } = await supabase
       .from('task_records')
       .delete()
@@ -196,9 +93,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     
     if (error) throw error;
     await get().fetchTaskStats();
-  },
+  };
 
-  getCurrentRecord: async (taskId: string) => {
+  const getCurrentRecord = async (taskId: string) => {
     const { data, error } = await supabase
       .from('task_records')
       .select('*')
@@ -209,9 +106,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     
     if (error && error.code !== 'PGRST116') throw error;
     return data;
-  },
+  };
 
-  createTaskRecord: async (taskId: string, totalTasks: number, measureWord: string, totalTimeMinutes: number) => {
+  const createTaskRecord = async (taskId: string, totalTasks: number, measureWord: string, totalTimeMinutes: number) => {
     const { data, error } = await supabase
       .from('task_records')
       .insert([{
@@ -225,9 +122,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     
     if (error) throw error;
     return data;
-  },
+  };
 
-  recordTaskSnapshot: async (recordId: string, taskNumber: number, taskTimeSeconds: number, totalTimeSeconds: number) => {
+  const recordTaskSnapshot = async (recordId: string, taskNumber: number, taskTimeSeconds: number, totalTimeSeconds: number) => {
     const { error } = await supabase
       .from('task_snapshots')
       .insert([{
@@ -246,5 +143,130 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       .eq('id', recordId);
 
     await get().fetchTaskStats();
-  }
-}));
+  };
+
+  return {
+    tasks: [],
+    taskStats: [],
+    loading: false,
+    error: null,
+
+    fetchTasks: async () => {
+      set({ loading: true, error: null });
+      try {
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        // 去重任务名称
+        const uniqueTasks = data.reduce((acc: Task[], curr) => {
+          if (!acc.some(task => task.name === curr.name)) {
+            acc.push(curr);
+          }
+          return acc;
+        }, []);
+        
+        set({ tasks: uniqueTasks });
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+        set({ error: error instanceof Error ? error.message : '获取任务列表失败' });
+      } finally {
+        set({ loading: false });
+      }
+    },
+
+    fetchTaskStats: async () => {
+      set({ loading: true, error: null });
+      try {
+        const { data, error } = await supabase
+          .from('task_records')
+          .select(`
+            id,
+            task_id,
+            total_tasks,
+            completed_count,
+            measure_word,
+            total_time_minutes,
+            created_at,
+            tasks (
+              name
+            ),
+            task_snapshots (
+              task_time_seconds
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const statsMap = new Map<string, TaskStats>();
+
+        data.forEach((record: any) => {
+          const taskName = record.tasks.name;
+          const averageTime = record.task_snapshots.reduce(
+            (sum: number, snapshot: any) => sum + snapshot.task_time_seconds, 
+            0
+          ) / (record.completed_count || 1);
+
+          if (!statsMap.has(taskName)) {
+            statsMap.set(taskName, {
+              name: taskName,
+              totalAverage: 0,
+              suggestedAverage: 0,
+              totalCompleted: 0,
+              totalTarget: 0,
+              measureWord: record.measure_word,
+              speedAdjustment: 0,
+              sampleSize: null,
+              records: []
+            });
+          }
+
+          const stat = statsMap.get(taskName)!;
+          stat.totalCompleted += record.completed_count;
+          stat.totalTarget += record.total_tasks;
+          stat.records.push({
+            id: record.id,
+            task_id: record.task_id,
+            task_name: taskName,
+            created_at: record.created_at,
+            total_tasks: record.total_tasks,
+            completed_count: record.completed_count,
+            measure_word: record.measure_word,
+            total_time_minutes: record.total_time_minutes,
+            average_time: averageTime
+          });
+        });
+
+        // 计算总平均时间和建议时间
+        statsMap.forEach(stat => {
+          const totalTime = stat.records.reduce(
+            (sum, record) => sum + (record.average_time * record.completed_count),
+            0
+          );
+          stat.totalAverage = totalTime / stat.totalCompleted;
+          stat.suggestedAverage = Math.round(stat.totalAverage * (1 + stat.speedAdjustment / 100));
+        });
+
+        set({ taskStats: Array.from(statsMap.values()) });
+      } catch (error) {
+        console.error('Error fetching task stats:', error);
+        set({ error: error instanceof Error ? error.message : '获取任务统计失败' });
+      } finally {
+        set({ loading: false });
+      }
+    },
+
+    getTaskSuggestion,
+    updateTaskSuggestion,
+    createTask,
+    deleteTask,
+    deleteTaskRecord,
+    getCurrentRecord,
+    createTaskRecord,
+    recordTaskSnapshot
+  };
+});

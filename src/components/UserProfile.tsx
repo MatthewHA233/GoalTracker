@@ -6,9 +6,10 @@ import { TaskStatsList } from './TaskStatsList';
 interface UserProfileProps {
   onClose: () => void;
   isTimerRunning: boolean;
+  onContinueRecord: (record: any, taskName: string) => void;
 }
 
-export function UserProfile({ onClose, isTimerRunning }: UserProfileProps) {
+export function UserProfile({ onClose, isTimerRunning, onContinueRecord }: UserProfileProps) {
   const { taskStats, fetchTaskStats, deleteTask, deleteTaskRecord } = useTaskStore();
 
   React.useEffect(() => {
@@ -80,6 +81,8 @@ export function UserProfile({ onClose, isTimerRunning }: UserProfileProps) {
             stats={taskStats}
             onDeleteTask={handleDeleteTask}
             onDeleteRecord={handleDeleteRecord}
+            onContinueRecord={onContinueRecord}
+            onClose={onClose}
           />
         </div>
       </div>
