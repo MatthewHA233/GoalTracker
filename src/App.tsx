@@ -160,10 +160,28 @@ function App() {
     setAverageTimePerTask(minutes * 60 / totalTasks);
   };
 
-  const handleTotalTasksChange = (count: number) => {
+  const handleTotalTasksChange = async (count: number) => {
     if (count < taskCount + 1) return;
-    setTotalTasks(count);
-    setAverageTimePerTask(totalTimeLimit / count);
+    
+    // 更新数据库中的总任务数
+    if (currentRecordId) {
+      try {
+        await supabase
+          .from('task_records')
+          .update({ total_tasks: count })
+          .eq('id', currentRecordId);
+        
+        // 更新本地状态
+        setTotalTasks(count);
+        setAverageTimePerTask(totalTimeLimit / count);
+        
+        // 刷新任务统计数据
+        await fetchTaskStats();
+      } catch (error) {
+        console.error('Error updating total tasks:', error);
+        alert('更新总任务数失败');
+      }
+    }
   };
 
   if (authLoading) {
