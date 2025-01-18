@@ -156,7 +156,7 @@ export function TrackerPanel({
                     onClick={handleApplyCurrentAverage}
                     className="text-sm text-purple-300/60 hover:text-green-400 transition-colors"
                   >
-                    沿用历史平均用时 ({formatTimeWithUnit(suggestedTotalTime)})
+                    点击使用历史平均速度计算总时长 ({formatTimeWithUnit(suggestedTotalTime)})
                   </button>
                 )}
                 <button
