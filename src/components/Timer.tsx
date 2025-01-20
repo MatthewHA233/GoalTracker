@@ -141,7 +141,7 @@ export function Timer({
       <div className="grid grid-cols-2 gap-3 sm:gap-6 mb-8">
         <div className="text-center">
           <h3 className="text-sm sm:text-lg font-medium mb-2 sm:mb-4 text-purple-300">当前任务</h3>
-          <div className="digital-display transform-none sm:transform">
+          <div className={`digital-display transform-none sm:transform ${showHours ? 'scale-[0.85]' : ''}`}>
             <div className={`time-value ${isTaskOverTime ? 'text-red-400' : 'text-purple-400'}`}>
               <TimeDisplay 
                 seconds={taskElapsedTime} 
@@ -156,7 +156,7 @@ export function Timer({
         </div>
         <div className="text-center">
           <h3 className="text-sm sm:text-lg font-medium mb-2 sm:mb-4 text-purple-300">总时间</h3>
-          <div className="digital-display transform-none sm:transform">
+          <div className={`digital-display transform-none sm:transform ${showHours ? 'scale-[0.85]' : ''}`}>
             <div className={`time-value ${isOverTime ? 'text-red-400' : 'text-purple-400'}`}>
               <TimeDisplay 
                 seconds={totalElapsedTime} 

@@ -141,17 +141,34 @@ function App() {
     }
   };
 
-  const handleContinueRecord = (record: TaskRecord, taskName: string) => {
-    setTaskName(taskName);
-    setTotalTasks(record.total_tasks);
-    setMeasureWord(record.measure_word);
-    setTotalTime(record.total_time_minutes);
-    setTaskCount(record.completed_count);
-    setCurrentTaskId(record.task_id);
-    setCurrentRecordId(record.id);
-    setTotalTimeLimit(record.total_time_minutes * 60);
-    setAverageTimePerTask(record.total_time_minutes * 60 / record.total_tasks);
-    setShowTracker(true);
+  const handleContinueRecord = async (record: TaskRecord, taskName: string) => {
+    try {
+      // 获取该记录的所有快照
+      const { data: snapshots } = await supabase
+        .from('task_snapshots')
+        .select('*')
+        .eq('task_record_id', record.id)
+        .order('total_time_seconds', { ascending: false })
+        .limit(1);
+
+      // 设置总耗时为最后一个快照的总时间
+      const lastTotalTime = snapshots?.[0]?.total_time_seconds || 0;
+      
+      setTaskName(taskName);
+      setTotalTasks(record.total_tasks);
+      setMeasureWord(record.measure_word);
+      setTotalTime(record.total_time_minutes);
+      setTaskCount(record.completed_count);
+      setCurrentTaskId(record.task_id);
+      setCurrentRecordId(record.id);
+      setTotalTimeLimit(record.total_time_minutes * 60);
+      setAverageTimePerTask(record.total_time_minutes * 60 / record.total_tasks);
+      setTotalElapsedTime(lastTotalTime);  // 设置之前累计的总时间
+      setShowTracker(true);
+    } catch (error) {
+      console.error('Error continuing record:', error);
+      alert('继续任务时发生错误');
+    }
   };
 
   const handleTotalTimeChange = (minutes: number) => {
